@@ -9,44 +9,43 @@
 # 决策数
 import csv
 
-
 import pydotplus as pydotplus
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
 from sklearn import preprocessing
 from sklearn import tree
 import numpy as np
 
+# clf = clf.fit(dummyX, dummyY)
+from sklearn.model_selection import train_test_split, GridSearchCV
 
-film_data = open("films.csv", "rt")
-reader = csv.reader(film_data)
-
-# 表头信息
-headers = next(reader)
-print(headers)
+feature_names = ['E_E','brt_ness','E_V', 'E_I']
 
 
-feature_list = []
-result_list = []
-for row in reader:
-    # print("row: ", row[-1])
-    result_list.append(row[-1])
+Xtrain = ""
+Xtest = ""
+Ytrain = ''
+Ytest = ''
 
-    # 去掉首位两列，特征集中只保留type, country, gross
-    feature_list.append(dict(zip(headers[1:-1], row[1:-1])))
+with open("dhlk_light.csv", "rt") as csv_file:
 
-# print(result_list)
-# print(feature_list)
+    data_file = csv.reader(csv_file)
+    temp = next(data_file)
+    n_samples = 458668
+    n_features = 4
+    # target_names = np.array(temp[2:])
+    data = np.empty((n_samples, n_features))
+    target = np.empty((n_samples,), dtype=np.int)
 
-vec = DictVectorizer()
-dummyX = vec.fit_transform(feature_list).toarray()
-dummyY = preprocessing.LabelBinarizer().fit_transform(result_list)
+    for i, ir in enumerate(data_file):
+        data[i] = np.asarray(ir[3:], dtype=np.float64)
+        target[i] = np.asarray(ir[1])
 
-print("dummpyX \n", dummyX)
-print("dummpyY \n", dummyY)
+    Xtrain, Xtest, Ytrain, Ytest = train_test_split(data, target, test_size=0.3)
 
-clf = tree.DecisionTreeClassifier(criterion='entropy', random_state=0)
-clf = clf.fit(dummyX, dummyY)
-print('clf' + str(clf))
+clf = tree.DecisionTreeClassifier(criterion='entropy', random_state=0, splitter='random')
+
+clf.fit(Xtrain, Ytrain)
 
 
 import os
@@ -55,11 +54,22 @@ ospath = os.path
 
 os.environ['PATH'] += os.pathsep + r'E:\Tools\Graphviz\bin'
 dot_data = tree.export_graphviz(clf
-                                ,feature_names=vec.get_feature_names()
-                                ,filled=True
-                                ,rounded=True
-                                ,out_file=None)
-graph = pydotplus.graph_from_dot_data(dot_data)
-print(type(graph))
-graph.write_pdf('film.pdf')
+                                , feature_names=feature_names
+                                , filled=True
+                                , rounded=True
+                                , out_file=None)
+#
+
+
+from sklearn.preprocessing import StandardScaler
+
+# 数据标准化
+data = [[-1, 2], [-0.5,6],[0,10],[1, 18]]
+
+scaler = StandardScaler()
+scaler.fit(data) # fit 本质是生成均值和方差
+print("xxxxxxxxx",scaler.mean_) # 查看均值的属性mean_
+print("xssss",scaler.var_) # 查看方差的属性 var_
+x_std =scaler.transform(data) # 通过接口导出结果
+# x_std.mean() # 导出的结果是一个数组， 用mean（）查看均值
 
